@@ -1,0 +1,22 @@
+{
+    "name": "fixer-io-mongodb-proxy",
+    "description": "A simple web app that stores fixer-io results in mongodb to prevent rate limiting",
+    "version": "0.0.1",
+    "private": true,
+    "license": "MIT",
+    "author": "Hannes Kindströmmer",
+    "engines": {
+        "node": ">=6.9.1"
+    },
+    "scripts": {
+        "start": "node index.js"
+    },
+    "dependencies": {
+        "axios": "^0.18.0",
+        "body-parser": "^1.18.3",
+        "config": "^1.30.0",
+        "express": "^4.16.3",
+        "mongodb": "^3.1.0",
+        "mongoose": "^5.1.7"
+    }
+}
