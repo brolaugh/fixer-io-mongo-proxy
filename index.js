@@ -94,6 +94,8 @@ app.get(validDateRegex, (req, res) => getCacheElseSource(req.path.trim(req.path.
 app.get(/^\/\d{4}\-\d{1,2}\-\d{1,2}$/, (req, res) => res.status(400).send("Invalid date format, please use YYYY-MM-DD"))
 app.get(/^\/\d{4}[\/.]\d{1,2}[\/.]\d{1,2}$/, (req, res) => res.status(400).send("Invalid date format, please use YYYY-MM-DD"))
 
+app.use(express.static('.well-known'))
+
 // 
 app.get('*', (req, res) => res.status(404).send("Page not found"))
 
