@@ -136,7 +136,7 @@ app.get('/latest', (req, res) => getCacheElseSource("/latest")
         //console.log(err)
     })
 )
-app.get(validDateRegex, (req, res) => getCacheElseSource(req.path.trim(req.path.slice(1)))
+app.get(validDateRegex, (req, res) => getCacheElseSource(req.path.trim(req.path))
     .then(response => respond(response, res))
     .catch(err => {
         res.status(503).send(err)
