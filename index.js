@@ -74,6 +74,55 @@ const getCacheElseSource  = async (route) => {
     return await callSource(route)
 }
 
+const getExchangeRateRange = (start_date, end_date, exchangeRates) => new Promise((resolve, reject) => {
+    const dateRangeStart = new Date(Date.UTC(start_date.split("-")[0], start_date.split("-")[1] - 1, start_date.split("-")[2]))
+    const dateRangeEnd = new Date(Date.UTC(end_date.split("-")[0], end_date.split("-")[1] - 1, end_date.split("-")[2]))
+    dateRangeEnd.setUTCDate(dateRangeEnd.getDate() + 1)
+
+    const base = "EUR"
+    let projection = {
+        _id: 1,
+        timestamp: 1,
+    }
+    
+    let query = null;
+
+    if(exchangeRates && exchangeRates.length > 0){
+        exchangeRates.forEach(element => projection[`rates.${element}`] = 1)
+    }else{
+        projection.rates = 1
+    }
+
+    ExchangeModel.aggregate([
+        { $match: { timestamp: { "$gte": dateRangeStart, "$lte": dateRangeEnd }, base: base } },
+        { $project: projection },
+        { $sort: { timestamp: 1 } }
+    ]).exec((err, mongoRates) => {
+
+        if(err){
+            reject(err)
+            return
+        }
+        if (!mongoRates){
+            resolve(null)
+        }else{
+            let instance = {
+                success: true,
+                start_date: dateRangeStart,
+                end_date: dateRangeEnd,
+                base: base,
+                rates: {}
+            }
+            mongoRates.forEach(element => {
+                instance.rates[element.timestamp.toISOString().split("T")[0]] = element.rates
+            })
+            resolve(instance)
+        }
+        
+    })
+})
+
+
 const respond = (responseData, res)=> {
     res.set("Content-Type", "application/json")
     res.send(responseData)
@@ -94,7 +143,16 @@ app.get(validDateRegex, (req, res) => getCacheElseSource(req.path.trim(req.path.
         console.log(err)
     })
 )
-
+app.get("/timeseries", (req, res) => {
+    const symbols = req.query.symbols ? req.query.symbols.split(',') : []
+    return getExchangeRateRange(req.query.start_date, req.query.end_date, symbols)
+        .then(response => respond(response, res))
+        .catch(err => {
+            res.status(503).send(err)
+            //console.log(err)
+        })
+    })
+    
 
 // We know they are sending a date but it's not the format we want
 app.get(/^\/\d{4}\-\d{1,2}\-\d{1,2}$/, (req, res) => res.status(400).send("Invalid date format, please use YYYY-MM-DD"))
