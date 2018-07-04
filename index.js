@@ -26,20 +26,21 @@ let db = mongoose.connection
 db.on('error', console.error.bind(console, 'MongoDB connection error:'))
 
 const getCurrentDate = () => {
-    let date = new Date()
+    let date = new Date(new Date().getTime())
     date.setUTCHours(0, 0, 0, 0)
     return date
 }
 
 const callDb = (route) => new Promise((resolve, reject) => {
-    let routeDate = new Date(route);
-    let dateRangeStart = route === "latest" ? getCurrentDate() : new Date(Date.UTC(routeDate.getFullYear(), routeDate.getMonth(), routeDate.getDate(), 0,0,0,0));
-    let dateRangeEnd = new Date(dateRangeStart.getTime());
+    route = route.split('/')[1]
+
+    let dateRangeStart = route === "latest" ? getCurrentDate() : new Date(Date.UTC(route.split("-")[0], route.split("-")[1]-1, route.split("-")[2]))
+    let dateRangeEnd = new Date(dateRangeStart.getTime())
     dateRangeEnd.setUTCDate(dateRangeStart.getUTCDate() + 1)
 
     ExchangeModel.findOne({ timestamp: { "$gte": dateRangeStart, "$lt": dateRangeEnd } }).exec(function (err, rates) {
         if (err) {
-            reject("Whoops! Something didn't go as planned")
+            reject(err)
         } else if (!rates) {
             resolve(null)
         } else {
@@ -53,6 +54,7 @@ const callSource = (route) => new Promise((resolve, reject) => {
         .then(response => {
             if(response.data.success !== true){
                 reject("Invalid request")
+                return;
             }
             response.data.timestamp = new Date(response.data.timestamp * 1000)
             if (response.data.historical !== true) {
@@ -78,8 +80,12 @@ const respond = (responseData, res)=> {
     return;
 }
 
-app.get('/latest', (req, res) => getCacheElseSource("latest")
-    .then(response => respond(response, res), err => res.status(503).send(err))
+app.get('/latest', (req, res) => getCacheElseSource("/latest")
+    .then(response => respond(response, res))
+    .catch(err => {
+        res.status(503).send(err)
+        //console.log(err)
+    })
 )
 app.get(validDateRegex, (req, res) => getCacheElseSource(req.path.trim(req.path.slice(1)))
     .then(response => respond(response, res))
