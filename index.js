@@ -77,7 +77,8 @@ const getCacheElseSource  = async (route) => {
 const getExchangeRateRange = (start_date, end_date, exchangeRates) => new Promise((resolve, reject) => {
     const dateRangeStart = new Date(Date.UTC(start_date.split("-")[0], start_date.split("-")[1] - 1, start_date.split("-")[2]))
     const dateRangeEnd = new Date(Date.UTC(end_date.split("-")[0], end_date.split("-")[1] - 1, end_date.split("-")[2]))
-    dateRangeEnd.setUTCDate(dateRangeEnd.getDate() + 1)
+    dateRangeEnd.setUTCDate(dateRangeEnd.getUTCDate() + 1)
+    dateRangeEnd.setUTCSeconds(dateRangeEnd.getUTCSeconds() - 1)
 
     const base = "EUR"
     let projection = {
@@ -108,8 +109,8 @@ const getExchangeRateRange = (start_date, end_date, exchangeRates) => new Promis
         }else{
             let instance = {
                 success: true,
-                start_date: dateRangeStart,
-                end_date: dateRangeEnd,
+                start_date: dateRangeStart.toISOString().split("T")[0],
+                end_date: dateRangeEnd.toISOString().split("T")[0],
                 base: base,
                 rates: {}
             }
